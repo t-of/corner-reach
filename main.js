@@ -26,7 +26,93 @@ if ('serviceWorker' in navigator) {
 
 const $ = (id) => document.getElementById(id);
 let stats = load('stats', { v: 1, played: 0, win: 0, lose: 0, draw: 0, best: 0 });
-let settings = load('settings', { v: 1, seenHelp: false });
+let settings = load('settings', { v: 1, seenHelp: false, sound: true });
+
+// ---- 効果音（Web Audio で作る。音声ファイルは使わない） ----
+// iPhone のマナーモードでも鳴らす（Safari 16.4 以降）。
+// 'playback' にすると音楽アプリの曲が止まるので、アプリの音がオンのときだけにする。
+function setAudioSession(soundOn) {
+  try { if (navigator.audioSession) navigator.audioSession.type = soundOn ? 'playback' : 'auto'; } catch { /* 対応していない */ }
+}
+const Sound = {
+  ctx: null, out: null, lastAt: {},
+  // 最初に触ったときに呼ぶ（ブラウザは触る前の音を止める）
+  ensure() {
+    if (!settings.sound) return null;
+    if (!this.ctx || this.ctx.state === 'suspended') setAudioSession(true);
+    if (!this.ctx) {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
+      this.out = this.ctx.createGain();
+      this.out.gain.value = 0.6;   // 全体を控えめに
+      this.out.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+  // 同じ音が 60ms 以内に続いたら鳴らさない（連打で重ならない）
+  go(name) {
+    const c = this.ensure();
+    if (!c) return null;
+    if (c.currentTime - (this.lastAt[name] ?? -1) < 0.06) return null;
+    this.lastAt[name] = c.currentTime;
+    return c;
+  },
+  tone(c, freq, dur, { type = 'sine', gain = 0.1, at = 0, bend = 1 } = {}) {
+    const t = c.currentTime + at;
+    const o = c.createOscillator(), v = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (bend !== 1) o.frequency.exponentialRampToValueAtTime(freq * bend, t + dur);
+    v.gain.setValueAtTime(0.0001, t);
+    v.gain.exponentialRampToValueAtTime(gain, t + 0.006);
+    v.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(v).connect(this.out);
+    o.start(t); o.stop(t + dur + 0.05);
+  },
+  // ブロックを盤に置く「コトッ」。短いノイズ + 低い音
+  thock(c, pitch, gain) {
+    const len = (0.04 * c.sampleRate) | 0;
+    const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 5;
+    const src = c.createBufferSource(), f = c.createBiquadFilter(), v = c.createGain();
+    src.buffer = buf; f.type = 'bandpass'; f.frequency.value = pitch * 9; f.Q.value = 0.9; v.gain.value = gain;
+    src.connect(f).connect(v).connect(this.out); src.start();
+    this.tone(c, pitch, 0.12, { gain: gain * 0.5, bend: 0.6 });
+  },
+  select() { const c = this.go('select'); if (c) this.tone(c, 880, 0.05, { gain: 0.05 }); },
+  turn() { const c = this.go('turn'); if (c) this.tone(c, 660, 0.05, { type: 'triangle', gain: 0.06, bend: 1.25 }); },
+  place() { const c = this.go('place'); if (c) this.thock(c, 190, 0.5); },
+  cpu() { const c = this.go('cpu'); if (c) this.thock(c, 150, 0.35); },
+  pass() { const c = this.go('pass'); if (c) { this.tone(c, 392, 0.16, { gain: 0.06 }); this.tone(c, 294, 0.24, { gain: 0.06, at: 0.13 }); } },
+  start() { const c = this.go('start'); if (c) { this.tone(c, 523, 0.12, { type: 'triangle', gain: 0.06 }); this.tone(c, 784, 0.18, { type: 'triangle', gain: 0.06, at: 0.08 }); } },
+  end(r, best) {
+    const c = this.go('end'); if (!c) return;
+    const notes = { win: [523, 659, 784, 1047], lose: [392, 330, 262], draw: [523, 523] }[r];
+    notes.forEach((f, i) => this.tone(c, f, 0.35, { type: 'triangle', gain: 0.07, at: i * 0.12 }));
+    // 最高記録を更新したら、きらっと 2 音
+    if (best) [1319, 1760].forEach((f, i) => this.tone(c, f, 0.3, { gain: 0.04, at: notes.length * 0.12 + 0.1 + i * 0.08 }));
+  },
+};
+setAudioSession(settings.sound);
+document.addEventListener('pointerdown', () => Sound.ensure(), { capture: true });
+
+// 音のオン・オフ（タイトルと対局の両方に置く）
+const soundButtons = document.querySelectorAll('[data-sound]');
+function renderSound() {
+  soundButtons.forEach((b) => {
+    b.setAttribute('aria-pressed', settings.sound);
+    b.setAttribute('aria-label', settings.sound ? '音をオフにする' : '音をオンにする');
+    if (b.classList.contains('pill')) b.querySelector('span').textContent = settings.sound ? '音 オン' : '音 オフ';
+  });
+}
+soundButtons.forEach((b) => b.addEventListener('click', () => {
+  settings = { ...settings, sound: !settings.sound };
+  save('settings', settings);
+  setAudioSession(settings.sound);
+  renderSound();
+  Sound.select();
+}));
+renderSound();
 
 let g = null;          // 対局
 let sel = null;        // 選んでいるブロックの影 { piece, cells, x, y }
@@ -50,7 +136,7 @@ const handButtons = PIECES.map((shape, piece) => {
   const w = Math.max(...shape.map((c) => c[0])) + 1, h = Math.max(...shape.map((c) => c[1])) + 1;
   const d = shape.map(([x, y]) => `M${x + (5 - w) / 2} ${y + (5 - h) / 2}h1v1h-1z`).join('');
   b.innerHTML = `<svg viewBox="0 0 5 5" aria-hidden="true"><path d="${d}"/></svg>`;
-  b.addEventListener('click', () => choose(piece));
+  b.addEventListener('click', () => { Sound.select(); choose(piece); });
   $('hand').append(b);
   return b;
 });
@@ -86,6 +172,7 @@ function turnShadow(fn) {
   if (!sel || !myTurn()) return;
   const [px, py] = pivot(sel.cells);
   const cx = sel.x + px, cy = sel.y + py;
+  Sound.turn();
   sel.cells = fn(sel.cells);
   moveCenterTo(cx, cy);
   render();
@@ -129,6 +216,7 @@ $('board').addEventListener('pointercancel', () => { drag = null; });
 function put() {
   if (!canPut()) return;
   place(g, 0, sel.piece, sel.cells, sel.x, sel.y);
+  Sound.place();
   sel = null;
   last = new Set();
   next();
@@ -145,6 +233,7 @@ function next() {
   if (g.over) { busy = true; render(); later(finish, 700); return; }
   // パスになった人を 1 回だけ知らせる
   let wait = 0;
+  if ((g.out[0] && !told[0]) || (g.out[1] && !told[1])) Sound.pass();
   if (g.out[0] && !told[0]) { told[0] = true; notice('置けるブロックがありません。\nパスします'); wait = 1500; }
   if (g.out[1] && !told[1]) { told[1] = true; notice('CPU は置けるブロックがありません。\nパスします'); }
   busy = g.turn === 1;
@@ -155,6 +244,7 @@ function next() {
 function cpuTurn() {
   const m = cpuMove(g, 1);   // advance で置ける手があるのを確かめてある
   place(g, 1, m.piece, m.cells, m.x, m.y);
+  Sound.cpu();
   last = new Set(m.cells.map(([cx, cy]) => (m.y + cy) * SIZE + m.x + cx));
   next();
 }
@@ -244,6 +334,7 @@ function renderStats() {
 
 function start() {
   g = newGame();
+  Sound.start();
   sel = null; busy = false; last = new Set(); told = [false, false];
   $('notice').hidden = true;
   show('game');
@@ -255,6 +346,7 @@ function finish() {
   $('notice').hidden = true;
   const r = result(g);
   const [me, cpu] = g.placed;
+  Sound.end(r, me > stats.best && stats.played > 0);
   stats = { ...stats, played: stats.played + 1, [r]: stats[r] + 1, best: Math.max(stats.best, me) };
   save('stats', stats);
   $('result-head').textContent = { win: '勝ち', lose: '負け', draw: '引き分け' }[r];

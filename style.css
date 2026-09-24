@@ -98,6 +98,11 @@ button { font: inherit; color: inherit; }
   border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
   font-size: 22px; line-height: 1; cursor: pointer;
 }
+/* 音のオン・オフ。aria-pressed で絵を切り替える */
+.icon-btn--sound { display: grid; place-items: center; padding: 0; }
+.icon-btn--sound svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn--sound[aria-pressed="true"] .off, .icon-btn--sound[aria-pressed="false"] .on { display: none; }
+.icon-btn--sound[aria-pressed="false"] { color: var(--muted); }
 .score {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
   height: 44px; border-radius: 12px; border: 2px solid transparent;
@@ -109,6 +114,11 @@ button { font: inherit; color: inherit; }
 .score--cpu i { background: var(--cpu); }
 .score--me.is-turn { border-color: var(--me); color: var(--fg); }
 .score--cpu.is-turn { border-color: var(--cpu); color: var(--fg); }
+/* 320px 幅でも × と音のボタンと得点が 1 行に収まるように */
+@media (max-width: 359px) {
+  .top { gap: 4px; }
+  .score { gap: 4px; font-size: 13px; }
+}
 .turn { margin: 0; text-align: center; font-size: 13px; color: var(--muted); min-height: 1.4em; }
 
 /* 盤: 残りの高さに収まる正方形。縁取りや溝は描かない（平らなマスだけ） */

@@ -52,6 +52,7 @@
         <div class="title__kit">
           <button class="pill" data-wak="install" hidden>アプリにする</button>
           <button class="pill" data-wak="share">共有</button>
+          <button class="pill" data-sound><span>音 オン</span></button>
         </div>
         <footer class="credit"><a href="/">T.OF...</a> のアプリ</footer>
       </div>
@@ -63,6 +64,10 @@
         <button class="icon-btn" id="quit" aria-label="タイトルへ">×</button>
         <div class="score score--me" id="score0"><i></i>あなた <b>0</b> マス</div>
         <div class="score score--cpu" id="score1"><i></i>CPU <b>0</b> マス</div>
+        <button class="icon-btn icon-btn--sound" data-sound>
+          <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.8a4.5 4.5 0 0 1 0 6.4M18.3 6a8.5 8.5 0 0 1 0 12"/></svg>
+          <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9.5 5 5m0-5-5 5"/></svg>
+        </button>
       </header>
       <p class="turn" id="turn" aria-live="polite"></p>
       <div class="board-wrap">
