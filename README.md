@@ -1,10 +1,12 @@
-# カドツギ — 角だけでつなぐ陣取り
+# CORNER REACH — 角だけでつなぐ陣取り
 
 ブロックを角と角だけでつないで広げていく、CPU とのふたり陣取り。相手より多くのマスを盤に置けたら勝ち。
 
+旧名 カドツギ（読み: コーナーリーチ）。
+
 ## 🔗 リンク
 
-- 遊ぶ: https://t-of.github.io/kadotsugi/
+- 遊ぶ: https://t-of.github.io/corner-reach/
 - 制作: [T.OF...](https://t-of.github.io/)
 
 ## 遊び方
@@ -51,4 +53,5 @@ node test.mjs
 
 CPU の強さは `game.js` の `CPU`（点の係数）で変えられる。
 
-記録は端末の localStorage に保存する（`kadotsugi.stats`: 戦績、`kadotsugi.settings`: 遊び方を見たか）。
+記録は端末の localStorage に保存する（`corner-reach.stats`: 戦績、`corner-reach.settings`: 遊び方を見たか）。
+旧名（`kadotsugi.`）の記録があれば読み込み時に引き継ぐ。

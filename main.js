@@ -2,12 +2,20 @@
 import { SIZE, STARTS, PIECES, VARIANTS, newGame, canPlace, place, advance, moves, hasMove, corners, cpuMove, result, rotate, flip } from './game.js';
 
 // localStorage はほかのアプリと共有される（同じ t-of.github.io のため）。
-// キーは必ず 'kadotsugi.' で始める。
-const STORE = 'kadotsugi.';
+// キーは必ず 'corner-reach.' で始める。
+const STORE = 'corner-reach.';
+const OLD_STORE = 'kadotsugi.';   // 旧名（カドツギ）。ここから記録を引き継ぐ。古いキーは消さない
 
 function load(key, fallback) {
   try {
-    const v = localStorage.getItem(STORE + key);
+    let v = localStorage.getItem(STORE + key);
+    if (v == null) {
+      const old = localStorage.getItem(OLD_STORE + key);
+      if (old != null) {
+        v = old;
+        try { localStorage.setItem(STORE + key, old); } catch { /* 保存できなくても今回は読めている */ }
+      }
+    }
     return v == null ? fallback : { ...fallback, ...JSON.parse(v) };
   } catch { return fallback; }
 }
@@ -15,7 +23,7 @@ function save(key, value) {
   try { localStorage.setItem(STORE + key, JSON.stringify(value)); } catch { /* 保存できなくても遊べる */ }
 }
 
-WebAppKit.init({ title: 'カドツギ', text: 'ブロックを角と角だけでつないで広げていく、CPU とのふたり陣取り。相手より多くのマスを盤に置けたら勝ち。' });
+WebAppKit.init({ title: 'CORNER REACH', text: 'ブロックを角と角だけでつないで広げていく、CPU とのふたり陣取り。相手より多くのマスを盤に置けたら勝ち。' });
 
 // localhost でも動かす（audit のオフライン確認のため）。自分のファイルは network-first なので開発の邪魔にならない
 if ('serviceWorker' in navigator) {
@@ -359,9 +367,9 @@ function finish() {
 function shareText() {
   const [me, cpu] = g.placed;
   return {
-    win: `カドツギで CPU に ${me} 対 ${cpu} で勝ち！`,
-    lose: `カドツギで CPU に ${me} 対 ${cpu} で負けた…次は勝つ！`,
-    draw: `カドツギで CPU と ${me} 対 ${cpu} で引き分け！`,
+    win: `CORNER REACH で CPU に ${me} 対 ${cpu} で勝ち！`,
+    lose: `CORNER REACH で CPU に ${me} 対 ${cpu} で負けた…次は勝つ！`,
+    draw: `CORNER REACH で CPU と ${me} 対 ${cpu} で引き分け！`,
   }[result(g)];
 }
 

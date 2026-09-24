@@ -1,4 +1,4 @@
-// カドツギの遊びの中身（盤・ブロック・置ける判定・パス・終わり・得点・CPU）。
+// CORNER REACH の遊びの中身（盤・ブロック・置ける判定・パス・終わり・得点・CPU）。
 // DOM には触らない。ブラウザでは main.js から、テストでは node test.mjs から読む。
 
 export const SIZE = 13;

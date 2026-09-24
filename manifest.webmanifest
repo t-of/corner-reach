@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "カドツギ — 角だけでつなぐ陣取り",
-  "short_name": "カドツギ",
+  "name": "CORNER REACH — 角だけでつなぐ陣取り",
+  "short_name": "CORNER REACH",
   "description": "ブロックを角と角だけでつないで広げていく、CPU とのふたり陣取り。相手より多くのマスを盤に置けたら勝ち。",
   "start_url": "./",
   "scope": "./",
