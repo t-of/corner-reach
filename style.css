@@ -59,7 +59,7 @@ button { font: inherit; color: inherit; }
 .btn--main { border-color: transparent; background: var(--me); color: #062520; }
 .btn:disabled { opacity: 0.35; cursor: default; }
 .pill {
-  min-height: 36px;
+  min-height: 44px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.06);
   border-radius: 999px;
@@ -82,6 +82,13 @@ button { font: inherit; color: inherit; }
 .title__stats { min-height: 1.5em; margin: 18px 0 0; font-size: 14px; color: var(--muted); }
 .title__foot { display: grid; gap: 12px; padding-top: 16px; }
 .title__kit { display: flex; justify-content: center; gap: 8px; }
+
+/* 横向きのスマホなど低い画面では絵を外して、共有と T.OF... まで 1 画面に収める */
+@media (max-height: 500px) {
+  .title__art { display: none; }
+  .title__lead { margin-bottom: 8px; }
+  .title__stats { margin-top: 8px; }
+}
 
 /* ---- 対局 ---- */
 .game { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -136,10 +143,12 @@ button { font: inherit; color: inherit; }
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: max-content; max-width: 90%; margin: 0; padding: 12px 18px;
   border-radius: 12px; background: var(--surface); border: 1px solid var(--line);
-  font-size: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  font-size: 15px; text-align: center; white-space: pre-line; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
+.side { display: flex; flex-direction: column; gap: 8px; }
 .controls { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px; }
-.hand { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+/* 手持ちは 1 つ 44〜56px。上限を付けて、残りを盤に回す */
+.hand { display: grid; grid-template-columns: repeat(7, minmax(44px, 56px)); justify-content: center; gap: 4px; }
 .piece {
   aspect-ratio: 1; width: 100%; padding: 5px;
   border: 2px solid transparent; border-radius: 10px; background: var(--surface); cursor: pointer;
@@ -148,14 +157,13 @@ button { font: inherit; color: inherit; }
 .piece.is-on { border-color: var(--me); background: color-mix(in srgb, var(--me) 14%, var(--surface)); }
 .piece.is-blocked svg { opacity: 0.25; }
 .piece.is-used { display: none; }
-.game.is-over .controls, .game.is-over .hand { visibility: hidden; }
+.game.is-over .controls, .game.is-over .hand { display: none; }
 
-/* 結果: 盤が見えるように下に寄せたカード */
+/* 結果: 手持ちの場所に出すカード（盤は縮めるだけで隠さない） */
 .result {
-  position: fixed; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-  width: min(420px, calc(100% - 24px));
-  padding: 18px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface);
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5); text-align: center;
+  width: min(420px, 100%); align-self: center;
+  padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface);
+  text-align: center;
 }
 .result p { margin: 0 0 6px; }
 .result__head { font-size: 28px; font-weight: 800; }
@@ -165,6 +173,21 @@ button { font: inherit; color: inherit; }
 .result__left { font-size: 13px; color: var(--muted); }
 .result__buttons { display: grid; grid-template-columns: 1.2fr 0.8fr 1.2fr; gap: 8px; margin-top: 12px; }
 .result__buttons .btn { padding: 0 8px; white-space: nowrap; }
+
+/* 横長の画面: 盤を左、操作と手持ちを右に */
+@media (orientation: landscape) and (min-width: 600px) {
+  .game {
+    display: grid; column-gap: 16px;
+    grid-template-columns: 1fr auto; grid-template-rows: auto auto 1fr;
+    grid-template-areas: "top side" "turn side" "board side";
+  }
+  .top { grid-area: top; }
+  .turn { grid-area: turn; }
+  .board-wrap { grid-area: board; }
+  .side { grid-area: side; justify-content: center; width: calc(7 * 56px + 6 * 4px); }
+  .hand { grid-template-columns: repeat(7, 56px); }
+  .result { width: 100%; }
+}
 
 /* 遊び方 */
 .help {

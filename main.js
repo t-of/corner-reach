@@ -145,8 +145,8 @@ function next() {
   if (g.over) { busy = true; render(); later(finish, 700); return; }
   // パスになった人を 1 回だけ知らせる
   let wait = 0;
-  if (g.out[0] && !told[0]) { told[0] = true; notice('置けるブロックがありません。パスします'); wait = 1500; }
-  if (g.out[1] && !told[1]) { told[1] = true; notice('CPU は置けるブロックがありません。パスします'); }
+  if (g.out[0] && !told[0]) { told[0] = true; notice('置けるブロックがありません。\nパスします'); wait = 1500; }
+  if (g.out[1] && !told[1]) { told[1] = true; notice('CPU は置けるブロックがありません。\nパスします'); }
   busy = g.turn === 1;
   render();
   if (g.turn === 1) later(cpuTurn, wait || (g.out[0] ? 250 : 400 + Math.random() * 200));
@@ -251,6 +251,8 @@ function start() {
 }
 
 function finish() {
+  clearTimeout(noticeTimer);
+  $('notice').hidden = true;
   const r = result(g);
   const [me, cpu] = g.placed;
   stats = { ...stats, played: stats.played + 1, [r]: stats[r] + 1, best: Math.max(stats.best, me) };
